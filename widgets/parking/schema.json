@@ -1,0 +1,3 @@
+﻿{ "airport":"IATA","updated":"ISO-8601",
+  "carparks":[{"name":"North Garage","capacity":2500,"occupied":1900,"status":"limited","price_per_hour":4.0,"book_url":"","directions_url":"","notes":"EV on L2"}]
+}

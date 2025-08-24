@@ -1,0 +1,6 @@
+﻿{ "airport":"ATL","updated":"2025-08-24T14:00:00Z",
+  "options":[
+    {"mode":"train","name":"MARTA Red Line","destinations":["Downtown","Midtown"],"frequency_mins":10,"first_last":"05:00â€“01:00","info_url":"https://itsmarta.com"},
+    {"mode":"rideshare","name":"Uber/Lyft","destinations":["Metro ATL"],"frequency_mins":0,"first_last":"24/7","book_url":"https://m.uber.com"}
+  ]
+}

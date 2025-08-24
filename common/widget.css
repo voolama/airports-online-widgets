@@ -1,0 +1,9 @@
+﻿.ao-container{font-family:system-ui,Segoe UI,Arial;padding:12px}
+.ao-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.ao-controls input,.ao-controls select{padding:6px}
+.ao-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid #ddd}
+.ao-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.ao-card{border:1px solid #e5e5e5;border-radius:10px;padding:12px}
+.ao-table{width:100%;border-collapse:collapse}
+.ao-table th,.ao-table td{border-bottom:1px solid #eee;padding:8px;text-align:left}
+.ao-table th{cursor:pointer}

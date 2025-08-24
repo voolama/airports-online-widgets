@@ -1,0 +1,3 @@
+﻿{ "airport":"IATA","updated":"ISO-8601",
+  "options":[{"mode":"train","name":"MARTA Red Line","destinations":["Downtown","Midtown"],"frequency_mins":10,"first_last":"05:00â€“01:00","book_url":"","info_url":""}]
+}

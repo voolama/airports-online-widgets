@@ -1,0 +1,6 @@
+﻿{ "airport":"ATL","updated":"2025-08-24T14:00:00Z",
+  "outlets":[
+    {"name":"Peachtree Grill","type":"restaurant","cuisine":["American"],"near_gate":"A12","location_desc":"Concourse A","order_ahead_url":"","rating":4.2,"open_now":true},
+    {"name":"Sky Coffee","type":"cafe","cuisine":["Coffee"],"near_gate":"B7","location_desc":"Concourse B","order_ahead_url":"","rating":4.0,"open_now":false}
+  ]
+}

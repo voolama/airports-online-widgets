@@ -1,0 +1,4 @@
+﻿{ "airport":"IATA","updated":"ISO-8601",
+  "departures":[{"time_local":"HH:mm","flight_number":"","airline":"","city":"","gate":"","status":""}],
+  "arrivals":[{"time_local":"HH:mm","flight_number":"","airline":"","city":"","gate":"","status":""}]
+}

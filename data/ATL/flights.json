@@ -1,0 +1,4 @@
+﻿{ "airport":"ATL","updated":"2025-08-24T14:00:00Z",
+  "departures":[{"time_local":"10:25","flight_number":"DL 123","airline":"Delta","city":"New York (JFK)","gate":"A12","status":"Boarding"}],
+  "arrivals":[{"time_local":"10:10","flight_number":"UA 456","airline":"United","city":"Chicago (ORD)","gate":"B5","status":"Landed"}]
+}

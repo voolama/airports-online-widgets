@@ -1,0 +1,3 @@
+﻿{ "airport":"IATA","updated":"ISO-8601",
+  "outlets":[{"name":"","type":"restaurant","cuisine":["American"],"near_gate":"A12","location_desc":"Concourse A","order_ahead_url":"","rating":4.3,"open_now":true}]
+}

@@ -1,0 +1,6 @@
+﻿{ "airport":"ATL","updated":"2025-08-24T14:00:00Z",
+  "hotels":[
+    {"name":"Renaissance Concourse ATL","onsite":false,"rating":4.4,"address":"1 Hartsfield Center Pkwy","distance_km":1.2,"map_url":"https://maps.google.com","book_url":""},
+    {"name":"Minute Suites (Airside)","onsite":true,"rating":4.1,"address":"Concourse B","distance_km":0.0,"map_url":"https://maps.google.com","book_url":""}
+  ]
+}

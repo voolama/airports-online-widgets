@@ -1,0 +1,3 @@
+﻿{ "airport":"IATA","updated":"ISO-8601",
+  "lounges":[{"name":"Delta Sky Club","terminal":"A","near_gate":"A17","day_pass":true,"book_url":"","busy_level":"medium","amenities":["Wi-Fi","Showers"],"hours":"05:00â€“22:00"}]
+}

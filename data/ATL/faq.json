@@ -1,0 +1,10 @@
+﻿{ "airport":"ATL","updated":"2025-08-24T14:00:00Z",
+  "faqs":[
+    {"q":"Where do I find TSA wait times?","a":"Check the airport app or TSA.gov. Signs at security show current queue times."},
+    {"q":"Is there free Wi-Fi?","a":"Yesâ€”look for the ATL Free Wi-Fi network and accept the terms."},
+    {"q":"Can I sleep at the airport?","a":"Minute Suites are available airside; quiet areas marked on the map."},
+    {"q":"Where is rideshare pickup?","a":"Follow signs for Rideshare; exact locations vary by terminal."},
+    {"q":"Are there water bottle fillers?","a":"Yes, near most restrooms; bring an empty bottle through security."},
+    {"q":"How early should I arrive?","a":"2 hours domestic, 3 hours international (check airline guidance)."}
+  ]
+}

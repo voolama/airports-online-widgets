@@ -1,0 +1,3 @@
+﻿{ "airport":"IATA","updated":"ISO-8601",
+  "hotels":[{"name":"Airport Marriott","onsite":false,"rating":4.2,"address":"123 Example Rd","distance_km":1.4,"map_url":"","book_url":""}]
+}

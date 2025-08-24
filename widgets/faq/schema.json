@@ -1,0 +1,6 @@
+﻿{ "airport":"IATA","updated":"ISO-8601",
+  "faqs":[
+    {"q":"Where do I find TSA wait times?","a":"Check the airport app or TSA.gov. Signs at security show current queue times."},
+    {"q":"Is there free Wi-Fi?","a":"Yesâ€”look for the airport SSID and accept the terms."}
+  ]
+}

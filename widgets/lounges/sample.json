@@ -1,0 +1,6 @@
+﻿{ "airport":"ATL","updated":"2025-08-24T14:00:00Z",
+  "lounges":[
+    {"name":"Delta Sky Club","terminal":"A","near_gate":"A17","day_pass":true,"book_url":"","busy_level":"high","amenities":["Wi-Fi","Showers"],"hours":"05:00â€“22:00"},
+    {"name":"The Club ATL","terminal":"F","near_gate":"F10","day_pass":true,"book_url":"","busy_level":"low","amenities":["Snacks","Drinks"],"hours":"06:00â€“21:00"}
+  ]
+}

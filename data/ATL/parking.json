@@ -1,0 +1,6 @@
+﻿{ "airport":"ATL","updated":"2025-08-24T14:00:00Z",
+  "carparks":[
+    {"name":"North Garage","capacity":2500,"occupied":1900,"status":"limited","price_per_hour":4.0,"book_url":"","directions_url":"https://maps.google.com/?q=ATL+North+Garage","notes":"EV on L2"},
+    {"name":"Economy Lot","capacity":3000,"occupied":2800,"status":"limited","price_per_hour":2.0,"book_url":"","directions_url":"https://maps.google.com/?q=ATL+Economy+Lot","notes":""}
+  ]
+}
