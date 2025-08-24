@@ -1,218 +1,155 @@
-﻿import { AIRPORT, loadJSON, byId, setTitle, sortTable, makeSearchInput } from "../../common/widget-utils.js";
+﻿// --- CONFIG ---
+const API_BASE = "https://bold-star-0549.dean-brown.workers.dev/flights"; // your Worker
+const MAX_ROWS = 300; // render cap per table
 
-const API_BASE = `https://bold-star-0549.dean-brown.workers.dev/flights`; // ← set this
-const STATUS_CLASS = {
-  active: "ao-badge",
-  scheduled: "ao-badge",
-  boarding: "ao-badge",
-  departed: "ao-badge",
-  landed: "ao-badge",
-  diverted: "ao-badge",
-  cancelled: "ao-badge"
-};
-
-const CITY_NOISE = [
-  " international", " municipal", " airport", " apt", " aéroport", " aerodrome",
-  " intl", " airpt", " air port"
-];
-
-function prettyCity(s) {
-  if (!s) return "";
-  let t = s.toLowerCase();
-  CITY_NOISE.forEach(n => { if (t.endsWith(n)) t = t.slice(0, -n.length); });
-  // Title-case
-  t = t.split(/[\s-]/).map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
-  // special fixups
-  t = t.replace("Hartsfield-Jackson Atlanta", "Atlanta")
-       .replace("John F Kennedy", "New York (JFK)")
-       .replace("La Guardia", "New York (LGA)")
-       .replace("Logan", "Boston (BOS)")
-       .replace("Mc Carran", "Las Vegas (LAS)")
-       .replace("Sky Harbor", "Phoenix (PHX)")
-       .replace("Westchester County", "Westchester (HPN)")
-       .replace("Minneapolis - St. Paul", "Minneapolis–St Paul (MSP)");
-  return t;
+// --- UTILITIES ---
+const $ = sel => document.querySelector(sel);
+function hhmmKey(h){ const m=/^(\d{1,2}):(\d{2})$/.exec(h||""); return m? (+m[1]*60+ +m[2]) : 1e9; }
+function airlineFromFlight(f){ return (String(f||"").match(/^[A-Z]{2,3}/)?.[0] || "").toUpperCase(); }
+function logoUrl(code){
+  // free logo source by airline IATA; falls back gracefully
+  // (Aviasales CDN — widely used for IATA logos)
+  return code ? `https://pics.avs.io/80/80/${code}.png` : `https://pics.avs.io/80/80/ZZ.png`;
+}
+function deriveAirport(){
+  const qs = new URLSearchParams(location.search);
+  const q = qs.get("airport");
+  if (q && /^[A-Za-z]{3}$/.test(q)) return q.toUpperCase();
+  const sub = location.hostname.split(".")[0];
+  if (/^[A-Za-z]{3}$/i.test(sub)) return sub.toUpperCase();
+  const m = location.pathname.match(/\/airport\/([a-z]{3})(?:\/|$)/i);
+  return m ? m[1].toUpperCase() : "ATL";
 }
 
-function hhmmToSortKey(hhmm) {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || "");
-  if (!m) return 24 * 60 + 1;
-  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+// --- STATE ---
+let DATA = { departures:[], arrivals:[] };
+let FILTERS = { airline:"", flight:"", city:"" };
+let COLFILTERS = { dep:{}, arr:{} };
+let SORT = { dep:{key:"time_local",dir:1}, arr:{key:"time_local",dir:1} };
+
+// --- RENDER ---
+function rowHTML(r){
+  const code = airlineFromFlight(r.flight_number);
+  return `<tr>
+    <td>${r.time_local||""}</td>
+    <td>
+      <div class="flightcell">
+        <img src="${logoUrl(code)}" alt="${code} logo" loading="lazy" referrerpolicy="no-referrer">
+        <div>
+          <div class="flightno">${r.flight_number||""}</div>
+          <div class="airline">${r.airline||""}</div>
+        </div>
+      </div>
+    </td>
+    <td>${r.city||""}</td>
+    <td>${r.gate||""}</td>
+    <td><span class="badge">${(r.status||"").replace(/\b\w/g,c=>c.toUpperCase())}</span></td>
+  </tr>`;
 }
 
-function groupCodeshares(list) {
-  // Records often repeat the same time/gate for codeshares. Group by time+gate+city.
-  const keyOf = r => [r.time_local || "", r.gate || "", r.city || "", r.flight_number || ""].join("|");
-  const map = new Map();
-  for (const r of list) {
-    const k = [r.time_local || "", r.gate || "", r.city || ""].join("|");
-    if (!map.has(k)) {
-      map.set(k, { ...r, codeshares: r.flight_number ? [r.flight_number] : [] });
-    } else {
-      const g = map.get(k);
-      if (r.flight_number && !g.codeshares.includes(r.flight_number)) g.codeshares.push(r.flight_number);
-      // Prefer a major airline name if empty/short
-      if (!g.airline && r.airline) g.airline = r.airline;
-      // If one of the rows has a more specific city, keep the longer one
-      if ((r.city || "").length > (g.city || "").length) g.city = r.city;
-    }
+function passesGlobalFilters(r){
+  const a = FILTERS.airline.trim().toLowerCase();
+  const f = FILTERS.flight.trim().toLowerCase();
+  const c = FILTERS.city.trim().toLowerCase();
+  if (a && !(r.airline||"").toLowerCase().includes(a)) return false;
+  if (f && !(r.flight_number||"").toLowerCase().includes(f)) return false;
+  if (c && !(r.city||"").toLowerCase().includes(c)) return false;
+  return true;
+}
+
+function passesColFilters(r, tableKey){
+  const cf = COLFILTERS[tableKey] || {};
+  for (const k in cf){
+    const v = (cf[k]||"").trim().toLowerCase();
+    if (!v) continue;
+    const val = (r[k]||"").toString().toLowerCase();
+    if (!val.includes(v)) return false;
   }
-  return [...map.values()];
+  return true;
 }
 
-function applyFilters(rows, { q, airline, flight, city }) {
-  q = (q || "").toLowerCase();
-  airline = (airline || "").toLowerCase();
-  flight = (flight || "").toLowerCase();
-  city = (city || "").toLowerCase();
+function sortRows(rows, tableKey){
+  const {key, dir} = SORT[tableKey];
+  const cmp = (a,b)=>{
+    if (key==="time_local") return (hhmmKey(a.time_local)-hhmmKey(b.time_local))*dir;
+    const av=(a[key]||"").toString().toLowerCase();
+    const bv=(b[key]||"").toString().toLowerCase();
+    return (av>bv?1:(av<bv?-1:0))*dir;
+  };
+  return rows.slice().sort(cmp);
+}
 
-  return rows.filter(r => {
-    const hay = (r.time_local + " " + r.flight_number + " " + (r.airline || "") + " " + (r.city || "") + " " + (r.gate || "")).toLowerCase();
-    if (q && !hay.includes(q)) return false;
-    if (airline && !(r.airline || "").toLowerCase().includes(airline)) return false;
-    if (flight && !(r.flight_number || "").toLowerCase().includes(flight)) return false;
-    if (city && !(r.city || "").toLowerCase().includes(city)) return false;
-    return true;
+function renderTable(tableKey, rows){
+  const filt = rows.filter(passesGlobalFilters).filter(r=>passesColFilters(r, tableKey));
+  const sorted = sortRows(filt, tableKey).slice(0, MAX_ROWS);
+  const tb = tableKey==="dep" ? $("#tbl-dep tbody") : $("#tbl-arr tbody");
+  tb.innerHTML = sorted.map(rowHTML).join("");
+}
+
+function render(){
+  renderTable("dep", DATA.departures);
+  renderTable("arr", DATA.arrivals);
+}
+
+// --- EVENTS (search strip) ---
+function bindSearch(){
+  $("#q-airline").addEventListener("input", e=>{ FILTERS.airline=e.target.value; render(); });
+  $("#q-flight").addEventListener("input",  e=>{ FILTERS.flight =e.target.value; render(); });
+  $("#q-city").addEventListener("input",    e=>{ FILTERS.city   =e.target.value; render(); });
+  $("#q-clear").addEventListener("click", ()=>{
+    FILTERS={airline:"",flight:"",city:""};
+    $("#q-airline").value=""; $("#q-flight").value=""; $("#q-city").value="";
+    document.querySelectorAll('thead .filters input').forEach(i=> i.value="");
+    COLFILTERS={dep:{},arr:{}};
+    render();
   });
 }
 
-function statusBadge(s) {
-  const cls = STATUS_CLASS[(s || "").toLowerCase()] || "ao-badge";
-  const text = (s || "").replace(/\b\w/g, c => c.toUpperCase());
-  return `<span class="${cls}">${text || "—"}</span>`;
-}
+// --- EVENTS (column filters + sort) ---
+function bindTable(tableKey){
+  const table = tableKey==="dep" ? $("#tbl-dep") : $("#tbl-arr");
 
-function renderTable(containerId, rows) {
-  const content = byId(containerId);
-  const sorted = [...rows].sort((a, b) => hhmmToSortKey(a.time_local) - hhmmToSortKey(b.time_local));
+  // sort on header click
+  table.querySelectorAll("thead tr:first-child th.sortable").forEach(th=>{
+    th.addEventListener("click", ()=>{
+      const key = th.getAttribute("data-key");
+      if (SORT[tableKey].key===key){ SORT[tableKey].dir *= -1; }
+      else { SORT[tableKey] = {key, dir:1}; }
+      renderTable(tableKey, tableKey==="dep"?DATA.departures:DATA.arrivals);
+    });
+  });
 
-  const body = sorted.map(r => {
-    const codeshares = (r.codeshares || []).filter(cs => cs !== r.flight_number);
-    const shareText = codeshares.length ? ` <span class="ao-badge">+${codeshares.length} codeshares</span>` : "";
-    return `<tr>
-      <td>${r.time_local || ""}</td>
-      <td><strong>${r.flight_number || ""}</strong>${shareText}<div>${r.airline || ""}</div></td>
-      <td>${prettyCity(r.city)}</td>
-      <td>${r.gate || ""}</td>
-      <td>${statusBadge(r.status)}</td>
-    </tr>`;
-  }).join("");
-
-  content.innerHTML = `
-    <table class="ao-table" id="${containerId}-table">
-      <thead>
-        <tr>
-          <th data-col="0">Time</th>
-          <th data-col="1">Flight / Airline</th>
-          <th data-col="2">City</th>
-          <th data-col="3">Gate</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>${body}</tbody>
-    </table>
-  `;
-
-  // enable click-to-sort on the first 4 cols
-  content.querySelectorAll("th[data-col]").forEach(th => {
-    let asc = true;
-    th.addEventListener("click", () => {
-      sortTable(content.querySelector("table"), parseInt(th.dataset.col, 10), asc);
-      asc = !asc;
+  // per-column filters (second header row)
+  table.querySelectorAll("thead tr.filters input").forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      COLFILTERS[tableKey][inp.getAttribute("data-col")] = inp.value;
+      renderTable(tableKey, tableKey==="dep"?DATA.departures:DATA.arrivals);
     });
   });
 }
 
-(async function init(){
-  setTitle("Flights");
+// --- BOOT ---
+async function init(){
+  bindSearch();
+  bindTable("dep");
+  bindTable("arr");
 
-  // Controls
-  const controls = document.getElementById("controls");
-  const search = makeSearchInput("Search (airline, flight #, city)");
-  search.style.minWidth = "260px";
-
-  const filterBar = document.createElement("div");
-  filterBar.className = "ao-controls";
-  filterBar.style.display = "flex";
-  filterBar.style.gap = "8px";
-  filterBar.style.flexWrap = "wrap";
-
-  const selDir = document.createElement("select");
-  selDir.innerHTML = `<option value="both">Departures & Arrivals</option>
-                      <option value="departures">Departures</option>
-                      <option value="arrivals">Arrivals</option>`;
-
-  const inAirline = document.createElement("input");
-  inAirline.placeholder = "Filter airline";
-
-  const inFlight = document.createElement("input");
-  inFlight.placeholder = "Filter flight #";
-
-  const inCity = document.createElement("input");
-  inCity.placeholder = "Filter city";
-
-  filterBar.appendChild(selDir);
-  filterBar.appendChild(inAirline);
-  filterBar.appendChild(inFlight);
-  filterBar.appendChild(inCity);
-
-  controls.appendChild(search);
-  controls.appendChild(filterBar);
-
-  // Content
-  const content = document.getElementById("content");
-  content.innerHTML = `
-    <section class="ao-card">
-      <h2>Departures</h2>
-      <div id="dep"></div>
-    </section>
-    <section class="ao-card">
-      <h2>Arrivals</h2>
-      <div id="arr"></div>
-    </section>
-  `;
-
-  // Load data (Worker → fallback to local sample)
-  let data;
-  try {
-    const url = `${API_BASE}?airport=${AIRPORT}&force=0`;
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) throw new Error(`API ${res.status}`);
-    data = await res.json();
-  } catch (e) {
-    console.warn("Live API failed, using sample:", e.message || e);
-    data = await loadJSON("./sample.json");
+  const AIRPORT = deriveAirport();
+  const url = `${API_BASE}?airport=${AIRPORT}`;
+  try{
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("API "+r.status);
+    const j = await r.json();
+    // sort by time ascending initially
+    DATA.departures = (j.departures||[]).slice().sort((a,b)=>hhmmKey(a.time_local)-hhmmKey(b.time_local));
+    DATA.arrivals   = (j.arrivals||[]).slice().sort((a,b)=>hhmmKey(a.time_local)-hhmmKey(b.time_local));
+  }catch(err){
+    console.warn("Live API failed, no data:", err);
+    DATA = { departures:[], arrivals:[] };
   }
+  render();
+}
 
-  // Normalise + group codeshares
-  const deps = groupCodeshares((data.departures || []).map(x => ({ ...x })));
-  const arrs = groupCodeshares((data.arrivals || []).map(x => ({ ...x })));
-
-  // Render
-  function doRender() {
-    const filters = {
-      q: search.value,
-      airline: inAirline.value,
-      flight: inFlight.value,
-      city: inCity.value
-    };
-
-    const show = selDir.value;
-    if (show !== "arrivals") {
-      renderTable("dep", applyFilters(deps, filters));
-      byId("dep").parentElement.style.display = "";
-    } else {
-      byId("dep").parentElement.style.display = "none";
-    }
-
-    if (show !== "departures") {
-      renderTable("arr", applyFilters(arrs, filters));
-      byId("arr").parentElement.style.display = "";
-    } else {
-      byId("arr").parentElement.style.display = "none";
-    }
-  }
-
-  [search, selDir, inAirline, inFlight, inCity].forEach(el => el.addEventListener("input", doRender));
-  doRender();
-})();
+document.readyState==="loading"
+  ? document.addEventListener("DOMContentLoaded", init, {once:true})
+  : init();

@@ -1,19 +1,75 @@
 ﻿<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Widget</title>
-  <link rel="stylesheet" href="../../common/widget.css" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Flights</title>
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=2">
 </head>
 <body>
-  <div id="app" class="ao-container">
-    <header class="ao-header">
-      <h1 id="title">Widget</h1>
-      <div id="controls" class="ao-controls"></div>
-    </header>
-    <div id="content" class="ao-content"></div>
+  <!-- Top search strip (no page header) -->
+  <div class="ao-searchbar">
+    <input id="q-airline" placeholder="Airline" aria-label="Filter by airline">
+    <input id="q-flight"  placeholder="Flight #" aria-label="Filter by flight number">
+    <input id="q-city"    placeholder="City" aria-label="Filter by city">
+    <button id="q-clear"  class="ghost">Clear</button>
   </div>
-  <script type="module" src="./widget.js"></script>
+
+  <!-- Departures -->
+  <section class="ao-card" id="departures">
+    <h2>Departures</h2>
+    <div class="table-wrap">
+      <table id="tbl-dep" class="ao-table" data-table="dep">
+        <thead>
+          <tr>
+            <th data-key="time_local" class="sortable">Time</th>
+            <th data-key="flight_number" class="sortable">Flight / Airline</th>
+            <th data-key="city" class="sortable">City</th>
+            <th data-key="gate" class="sortable">Gate</th>
+            <th data-key="status" class="sortable">Status</th>
+          </tr>
+          <tr class="filters">
+            <th><input data-col="time_local" placeholder="hh:mm"></th>
+            <th><input data-col="flight_number" placeholder="DL531"></th>
+            <th><input data-col="city" placeholder="e.g. Boston"></th>
+            <th><input data-col="gate" placeholder="A12"></th>
+            <th><input data-col="status" placeholder="Scheduled/Active"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Arrivals -->
+  <section class="ao-card" id="arrivals">
+    <h2>Arrivals</h2>
+    <div class="table-wrap">
+      <table id="tbl-arr" class="ao-table" data-table="arr">
+        <thead>
+          <tr>
+            <th data-key="time_local" class="sortable">Time</th>
+            <th data-key="flight_number" class="sortable">Flight / Airline</th>
+            <th data-key="city" class="sortable">City</th>
+            <th data-key="gate" class="sortable">Gate</th>
+            <th data-key="status" class="sortable">Status</th>
+          </tr>
+          <tr class="filters">
+            <th><input data-col="time_local" placeholder="hh:mm"></th>
+            <th><input data-col="flight_number" placeholder="AF1234"></th>
+            <th><input data-col="city" placeholder="e.g. Chicago"></th>
+            <th><input data-col="gate" placeholder="B5"></th>
+            <th><input data-col="status" placeholder="Landed/Active"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script src="./widget.js?v=5"></script>
 </body>
 </html>
