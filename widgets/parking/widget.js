@@ -6,7 +6,7 @@
   const rows = (data.carparks||[]).map(p=>{
     const pct = (p.capacity && p.occupied>=0) ? Math.round((p.occupied/p.capacity)*100) : null;
     return `<tr>
-      <td>${p.name}</td><td>${p.status||""}${pct!==null?` (${pct}%)`:""}</td>
+      <td>${p.name}</td><td>${p.status||""}${pct -ne $null ? ` (${pct}%)` : ""}</td>
       <td>$${p.price_per_hour?.toFixed(2)??"â€”"}/hr</td>
       <td>${p.notes||""}</td>
       <td>${p.book_url?`<a href="${p.book_url}" target="_blank" rel="noopener">Book</a>`:""}

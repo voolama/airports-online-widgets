@@ -1,4 +1,4 @@
-# --- Airports Online Widgets scaffold (single-quoted here-strings) ---
+# --- Airports Online Widgets scaffold (single-quoted here-strings, zero Copy-Item) ---
 $widgets = @("flights","dining","parking","lounges","transport","hotels","guide","faq")
 
 # folders
@@ -106,20 +106,21 @@ foreach ($w in $widgets) {
   Set-Content -Encoding UTF8 "widgets/$w/index.html" $widgetHtml
 
   switch ($w) {
+
     "flights" {
-@'
+$schema = @'
 { "airport":"IATA","updated":"ISO-8601",
   "departures":[{"time_local":"HH:mm","flight_number":"","airline":"","city":"","gate":"","status":""}],
   "arrivals":[{"time_local":"HH:mm","flight_number":"","airline":"","city":"","gate":"","status":""}]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
-@'
+'@
+$sample = @'
 { "airport":"ATL","updated":"2025-08-24T14:00:00Z",
   "departures":[{"time_local":"10:25","flight_number":"DL 123","airline":"Delta","city":"New York (JFK)","gate":"A12","status":"Boarding"}],
   "arrivals":[{"time_local":"10:10","flight_number":"UA 456","airline":"United","city":"Chicago (ORD)","gate":"B5","status":"Landed"}]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
-@'
+'@
+$widget = @'
 import { AIRPORT, loadJSON, byId, setTitle, sortTable, makeSearchInput } from "../../common/widget-utils.js";
 
 (async function init(){
@@ -169,23 +170,28 @@ import { AIRPORT, loadJSON, byId, setTitle, sortTable, makeSearchInput } from ".
     });
   });
 })();
-'@ | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
+'@
+      $schema  | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
+      $sample  | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
+      $sample  | Set-Content -Encoding UTF8 "data/ATL/$w.json"
+      $widget  | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
     }
+
     "dining" {
-@'
+$schema = @'
 { "airport":"IATA","updated":"ISO-8601",
   "outlets":[{"name":"","type":"restaurant","cuisine":["American"],"near_gate":"A12","location_desc":"Concourse A","order_ahead_url":"","rating":4.3,"open_now":true}]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
-@'
+'@
+$sample = @'
 { "airport":"ATL","updated":"2025-08-24T14:00:00Z",
   "outlets":[
     {"name":"Peachtree Grill","type":"restaurant","cuisine":["American"],"near_gate":"A12","location_desc":"Concourse A","order_ahead_url":"","rating":4.2,"open_now":true},
     {"name":"Sky Coffee","type":"cafe","cuisine":["Coffee"],"near_gate":"B7","location_desc":"Concourse B","order_ahead_url":"","rating":4.0,"open_now":false}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
-@'
+'@
+$widget = @'
 import { AIRPORT, loadJSON, setTitle } from "../../common/widget-utils.js";
 (async function(){
   setTitle("Shop, Eat & Drink");
@@ -203,23 +209,28 @@ import { AIRPORT, loadJSON, setTitle } from "../../common/widget-utils.js";
     </div>`).join("");
   content.innerHTML = `<div class="ao-grid">${items}</div>`;
 })();
-'@ | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
+'@
+      $schema | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
+      $sample | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
+      $sample | Set-Content -Encoding UTF8 "data/ATL/$w.json"
+      $widget | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
     }
+
     "parking" {
-@'
+$schema = @'
 { "airport":"IATA","updated":"ISO-8601",
   "carparks":[{"name":"North Garage","capacity":2500,"occupied":1900,"status":"limited","price_per_hour":4.0,"book_url":"","directions_url":"","notes":"EV on L2"}]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
-@'
+'@
+$sample = @'
 { "airport":"ATL","updated":"2025-08-24T14:00:00Z",
   "carparks":[
     {"name":"North Garage","capacity":2500,"occupied":1900,"status":"limited","price_per_hour":4.0,"book_url":"","directions_url":"https://maps.google.com/?q=ATL+North+Garage","notes":"EV on L2"},
     {"name":"Economy Lot","capacity":3000,"occupied":2800,"status":"limited","price_per_hour":2.0,"book_url":"","directions_url":"https://maps.google.com/?q=ATL+Economy+Lot","notes":""}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
-@'
+'@
+$widget = @'
 import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
 (async function(){
   const path = `/data/${AIRPORT}/parking.json`;
@@ -228,7 +239,7 @@ import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
   const rows = (data.carparks||[]).map(p=>{
     const pct = (p.capacity && p.occupied>=0) ? Math.round((p.occupied/p.capacity)*100) : null;
     return `<tr>
-      <td>${p.name}</td><td>${p.status||""}${pct!==null?` (${pct}%)`:""}</td>
+      <td>${p.name}</td><td>${p.status||""}${pct -ne $null ? ` (${pct}%)` : ""}</td>
       <td>$${p.price_per_hour?.toFixed(2)??"—"}/hr</td>
       <td>${p.notes||""}</td>
       <td>${p.book_url?`<a href="${p.book_url}" target="_blank" rel="noopener">Book</a>`:""}
@@ -237,23 +248,28 @@ import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
   }).join("");
   content.innerHTML = `<table class="ao-table"><thead><tr><th>Car Park</th><th>Status</th><th>Price</th><th>Notes</th><th>Links</th></tr></thead><tbody>${rows}</tbody></table>`;
 })();
-'@ | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
+'@
+      $schema | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
+      $sample | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
+      $sample | Set-Content -Encoding UTF8 "data/ATL/$w.json"
+      $widget | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
     }
+
     "lounges" {
-@'
+$schema = @'
 { "airport":"IATA","updated":"ISO-8601",
   "lounges":[{"name":"Delta Sky Club","terminal":"A","near_gate":"A17","day_pass":true,"book_url":"","busy_level":"medium","amenities":["Wi-Fi","Showers"],"hours":"05:00–22:00"}]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
-@'
+'@
+$sample = @'
 { "airport":"ATL","updated":"2025-08-24T14:00:00Z",
   "lounges":[
     {"name":"Delta Sky Club","terminal":"A","near_gate":"A17","day_pass":true,"book_url":"","busy_level":"high","amenities":["Wi-Fi","Showers"],"hours":"05:00–22:00"},
     {"name":"The Club ATL","terminal":"F","near_gate":"F10","day_pass":true,"book_url":"","busy_level":"low","amenities":["Snacks","Drinks"],"hours":"06:00–21:00"}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
-@'
+'@
+$widget = @'
 import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
 (async function(){
   const path = `/data/${AIRPORT}/lounges.json`;
@@ -270,23 +286,28 @@ import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
     </div>`).join("");
   content.innerHTML = `<div class="ao-grid">${cards}</div>`;
 })();
-'@ | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
+'@
+      $schema | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
+      $sample | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
+      $sample | Set-Content -Encoding UTF8 "data/ATL/$w.json"
+      $widget | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
     }
+
     "transport" {
-@'
+$schema = @'
 { "airport":"IATA","updated":"ISO-8601",
   "options":[{"mode":"train","name":"MARTA Red Line","destinations":["Downtown","Midtown"],"frequency_mins":10,"first_last":"05:00–01:00","book_url":"","info_url":""}]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
-@'
+'@
+$sample = @'
 { "airport":"ATL","updated":"2025-08-24T14:00:00Z",
   "options":[
     {"mode":"train","name":"MARTA Red Line","destinations":["Downtown","Midtown"],"frequency_mins":10,"first_last":"05:00–01:00","info_url":"https://itsmarta.com"},
     {"mode":"rideshare","name":"Uber/Lyft","destinations":["Metro ATL"],"frequency_mins":0,"first_last":"24/7","book_url":"https://m.uber.com"}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
-@'
+'@
+$widget = @'
 import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
 (async function(){
   const path = `/data/${AIRPORT}/transport.json`;
@@ -301,23 +322,28 @@ import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
     </tr>`).join("");
   content.innerHTML = `<table class="ao-table"><thead><tr><th>Mode</th><th>Name</th><th>Destinations</th><th>Freq</th><th>Hours</th><th>Links</th></tr></thead><tbody>${rows}</tbody></table>`;
 })();
-'@ | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
+'@
+      $schema | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
+      $sample | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
+      $sample | Set-Content -Encoding UTF8 "data/ATL/$w.json"
+      $widget | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
     }
+
     "hotels" {
-@'
+$schema = @'
 { "airport":"IATA","updated":"ISO-8601",
   "hotels":[{"name":"Airport Marriott","onsite":false,"rating":4.2,"address":"123 Example Rd","distance_km":1.4,"map_url":"","book_url":""}]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
-@'
+'@
+$sample = @'
 { "airport":"ATL","updated":"2025-08-24T14:00:00Z",
   "hotels":[
     {"name":"Renaissance Concourse ATL","onsite":false,"rating":4.4,"address":"1 Hartsfield Center Pkwy","distance_km":1.2,"map_url":"https://maps.google.com","book_url":""},
     {"name":"Minute Suites (Airside)","onsite":true,"rating":4.1,"address":"Concourse B","distance_km":0.0,"map_url":"https://maps.google.com","book_url":""}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
-@'
+'@
+$widget = @'
 import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
 (async function(){
   const path = `/data/${AIRPORT}/hotels.json`;
@@ -335,25 +361,30 @@ import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
     </div>`).join("");
   content.innerHTML = `<div class="ao-grid">${cards}</div>`;
 })();
-'@ | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
+'@
+      $schema | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
+      $sample | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
+      $sample | Set-Content -Encoding UTF8 "data/ATL/$w.json"
+      $widget | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
     }
+
     "guide" {
-@'
+$schema = @'
 { "airport":"IATA","updated":"ISO-8601",
   "sections":[
     {"category":"Services","title":"Baggage Wrap","description":"Secure wrap service near A11","link":"","map_embed":""}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
-@'
+'@
+$sample = @'
 { "airport":"ATL","updated":"2025-08-24T14:00:00Z",
   "sections":[
     {"category":"Services","title":"Baggage Wrap","description":"Secure wrap near A11","link":"","map_embed":""},
     {"category":"Amenities","title":"Nursing Room","description":"Private room with sink","link":"","map_embed":""}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
-@'
+'@
+$widget = @'
 import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
 (async function(){
   const path = `/data/${AIRPORT}/guide.json`;
@@ -367,18 +398,23 @@ import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
       <ul>${groups[cat].map(s=>`<li><strong>${s.title}</strong> — ${s.description||""} ${s.link?`<a href="${s.link}" target="_blank" rel="noopener">More</a>`:""}</li>`).join("")}</ul>
     </section>`).join("");
 })();
-'@ | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
+'@
+      $schema | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
+      $sample | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
+      $sample | Set-Content -Encoding UTF8 "data/ATL/$w.json"
+      $widget | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
     }
+
     "faq" {
-@'
+$schema = @'
 { "airport":"IATA","updated":"ISO-8601",
   "faqs":[
     {"q":"Where do I find TSA wait times?","a":"Check the airport app or TSA.gov. Signs at security show current queue times."},
     {"q":"Is there free Wi-Fi?","a":"Yes—look for the airport SSID and accept the terms."}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
-@'
+'@
+$sample = @'
 { "airport":"ATL","updated":"2025-08-24T14:00:00Z",
   "faqs":[
     {"q":"Where do I find TSA wait times?","a":"Check the airport app or TSA.gov. Signs at security show current queue times."},
@@ -389,8 +425,8 @@ import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
     {"q":"How early should I arrive?","a":"2 hours domestic, 3 hours international (check airline guidance)."}
   ]
 }
-'@ | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
-@'
+'@
+$widget = @'
 import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
 (async function(){
   const path = `/data/${AIRPORT}/faq.json`;
@@ -403,13 +439,12 @@ import { AIRPORT, loadJSON } from "../../common/widget-utils.js";
     </details>`).join("");
   content.innerHTML = acc;
 })();
-'@ | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
+'@
+      $schema | Set-Content -Encoding UTF8 "widgets/$w/schema.json"
+      $sample | Set-Content -Encoding UTF8 "widgets/$w/sample.json"
+      $sample | Set-Content -Encoding UTF8 "data/ATL/$w.json"
+      $widget | Set-Content -Encoding UTF8 "widgets/$w/widget.js"
     }
-  }
-
-  # seed /data/ATL/*.json from samples
-  foreach ($w in $widgets) {
-    Copy-Item -Force "widgets/$w/sample.json" "data/ATL/$w.json"
   }
 }
 
